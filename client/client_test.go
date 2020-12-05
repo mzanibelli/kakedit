@@ -1,12 +1,12 @@
-package editor_test
+package client_test
 
 import (
-	"kakedit/editor"
+	"kakedit/client"
 	"testing"
 )
 
-func TestEditor(t *testing.T) {
-	ed := editor.New("foo", "bar")
+func TestClient(t *testing.T) {
+	ed := client.New("foo", "bar")
 	want := "foo bar"
 	got := ed.String()
 	if want != got {

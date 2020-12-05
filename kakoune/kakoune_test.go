@@ -2,12 +2,20 @@ package kakoune_test
 
 import (
 	"kakedit/kakoune"
+	"os"
 	"reflect"
 	"testing"
 )
 
 func TestEditCommandFormat(t *testing.T) {
-	kak := kakoune.New("foo", "bar")
+	if err := os.Setenv("kak_session", "foo"); err != nil {
+		t.Error(err)
+	}
+	if err := os.Setenv("kak_client", "bar"); err != nil {
+		t.Error(err)
+	}
+
+	kak := kakoune.FromEnvironment()
 	cmd := kak.Edit("test.txt")
 
 	want := []string{

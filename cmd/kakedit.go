@@ -15,8 +15,7 @@ func main() {
 
 	switch len(os.Args) {
 	case 2: // Program invoked by the user
-		err = kakedit.Pick(os.Args[0], os.Args[1],
-			os.Getenv("kak_session"), os.Getenv("kak_client"), timeout)
+		err = kakedit.Pick(os.Args[0], os.Args[1], timeout)
 	case 3: // Internal use only
 		err = kakedit.Edit(os.Args[0], os.Args[1], os.Args[2])
 	default:

@@ -18,7 +18,7 @@ func New(bin string) *Picker {
 
 // Pick runs the external tool and replaces EDITOR to allow sending edit
 // instructions to the remote instance.
-func (p Picker) Pick(editor fmt.Stringer) *exec.Cmd {
+func (p Picker) Pick(editorCmd fmt.Stringer) *exec.Cmd {
 	cmd := exec.Command(p.bin)
 
 	cmd.Stdout = os.Stdout
@@ -26,7 +26,7 @@ func (p Picker) Pick(editor fmt.Stringer) *exec.Cmd {
 	cmd.Stdin = os.Stdin
 
 	for _, name := range [...]string{"EDITOR", "VISUAL"} {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", name, editor))
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", name, editorCmd))
 	}
 
 	return cmd

@@ -2,7 +2,7 @@ package kakedit
 
 import (
 	"context"
-	"kakedit/editor"
+	"kakedit/client"
 	"kakedit/kakoune"
 	"kakedit/listener"
 	"kakedit/picker"
@@ -10,24 +10,25 @@ import (
 )
 
 // Pick runs the file picker and listens for edit requests.
-func Pick(edBin, piBin, session, client string, timeout time.Duration) error {
+func Pick(self, bin string, timeout time.Duration) error {
 	var err error
 
-	kak := kakoune.New(session, client)
+	kak := kakoune.FromEnvironment()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	lst, err := listener.ListenContext(ctx, timeout)
 	if err != nil {
 		return err
 	}
+
 	lst.Run(listener.OnMessageFunc(func(data []byte) error {
 		return kak.Edit(string(data)).Run()
 	}))
 
-	ed := editor.New(edBin, lst.Addr())
-	pi := picker.New(piBin)
+	cl := client.New(self, lst.Addr())
+	pi := picker.New(bin)
 
-	err = pi.Pick(ed).Run()
+	err = pi.Pick(cl).Run()
 
 	cancel()
 
@@ -40,4 +41,4 @@ func Pick(edBin, piBin, session, client string, timeout time.Duration) error {
 }
 
 // Edit sends a given filename to the remote listener.
-func Edit(bin, socket, file string) error { return editor.New(bin, socket).Edit(file) }
+func Edit(bin, socket, file string) error { return client.New(bin, socket).Send(file) }
