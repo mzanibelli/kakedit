@@ -1,6 +1,7 @@
 package listener
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -10,22 +11,19 @@ import (
 	"time"
 )
 
-var (
-	// ErrCaughtStopSignal is returned when the listener purposefully
-	// stopped listening for incoming connections.
-	ErrCaughtStopSignal = errors.New("caught stop signal")
-)
-
 // Listener is a stoppable UnixListener.
 type Listener struct {
 	*net.UnixListener
 	addr    string
 	timeout time.Duration
-	done    chan struct{}
+	ctx     context.Context
+	err     chan error
 }
 
-// Listen creates a stoppable listener.
-func Listen(timeout time.Duration) (*Listener, error) {
+// ListenContext creates a stoppable listener. The timeout is used to
+// periodically stop waiting for an incoming connection and check the
+// context state.
+func ListenContext(ctx context.Context, timeout time.Duration) (*Listener, error) {
 	addr := makeUniqueSocketPath()
 	unix, err := net.Listen("unix", addr)
 	if err != nil {
@@ -35,15 +33,16 @@ func Listen(timeout time.Duration) (*Listener, error) {
 		unix.(*net.UnixListener),
 		addr,
 		timeout,
-		make(chan struct{}),
+		ctx,
+		make(chan error),
 	}, nil
 }
 
 // Close stops waiting for the next incoming connection.
-func (l *Listener) Close() {
+func (l *Listener) Close() error {
 	defer l.UnixListener.Close()
-	defer close(l.done)
-	l.done <- struct{}{}
+	defer close(l.err)
+	return <-l.err
 }
 
 // Addr returns the path to the socket being listened to.
@@ -59,22 +58,15 @@ type OnMessageFunc func([]byte) error
 func (f OnMessageFunc) OnMessage(data []byte) error { return f(data) }
 
 // Run starts waiting for an incoming connection in a separate goroutine.
-func (l *Listener) Run(handler Handler) <-chan error {
-	ec := make(chan error, 1)
-	go func() {
-		defer close(ec)
-		ec <- l.run(handler)
-	}()
-	return ec
-}
+func (l *Listener) Run(handler Handler) { go func() { l.err <- l.run(handler) }() }
 
 func (l *Listener) run(handler Handler) error {
 	for {
 		l.SetDeadline(time.Now().Add(l.timeout))
 		conn, err := l.UnixListener.Accept()
 		select {
-		case <-l.done:
-			return ErrCaughtStopSignal
+		case <-l.ctx.Done():
+			return l.ctx.Err()
 		default:
 			// handle connection
 		}

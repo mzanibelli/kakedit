@@ -1,6 +1,7 @@
 package listener_test
 
 import (
+	"context"
 	"fmt"
 	"kakedit/listener"
 	"net"
@@ -13,7 +14,8 @@ import (
 func TestListener(t *testing.T) {
 	mess := "hello"
 
-	lst, err := listener.Listen(5 * time.Millisecond)
+	ctx, cancel := context.WithCancel(context.Background())
+	lst, err := listener.ListenContext(ctx, 5*time.Millisecond)
 	if err != nil {
 		t.Errorf("could not initialize listener: %v", err)
 	}
@@ -41,7 +43,11 @@ func TestListener(t *testing.T) {
 
 	wg.Wait()
 
-	lst.Close()
+	cancel()
+
+	if err := lst.Close(); err != nil && err != ctx.Err() {
+		t.Error(err)
+	}
 	if _, err := os.Stat(lst.Addr()); os.IsExist(err) {
 		t.Error("socket was not removed on close")
 	}

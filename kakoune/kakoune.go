@@ -2,6 +2,7 @@ package kakoune
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 )
 
@@ -24,7 +25,9 @@ func (i Instance) Edit(file string) *exec.Cmd {
 	return i.makeShellCmd(cmd)
 }
 
-func (i Instance) makeShellCmd(cmd string) *exec.Cmd {
-	shellCmd := fmt.Sprintf("echo '%s' | kak -p %s", cmd, i.session)
-	return exec.Command("/bin/sh", "-c", shellCmd)
+func (i Instance) makeShellCmd(str string) *exec.Cmd {
+	shellCmd := fmt.Sprintf("echo '%s' | kak -p %s", str, i.session)
+	cmd := exec.Command("/bin/sh", "-c", shellCmd)
+	cmd.Env = os.Environ()
+	return cmd
 }
