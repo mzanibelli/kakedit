@@ -61,14 +61,14 @@ func Server(cmd string) error {
 // Local runs the file picker and replaces $EDITOR with a pre-connected
 // Kakoune command.
 func Local(cmd string) error {
-	cmd, err := kak.EditSession()
+	editor, err := kak.EditSession()
 	if err != nil {
 		return err
 	}
 
 	env := []string{
-		fmt.Sprintf("EDITOR=%s", cmd),
-		fmt.Sprintf("VISUAL=%s", cmd),
+		fmt.Sprintf("EDITOR=%s", editor),
+		fmt.Sprintf("VISUAL=%s", editor),
 	}
 	return command.RunPassthrough(cmd, env...)
 }
