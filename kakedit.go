@@ -20,7 +20,7 @@ const DefaultTimeout time.Duration = 200 * time.Millisecond
 
 // Server runs the file picker and waits for edit requests. Requests are
 // then forwarded to an existing Kakoune client.
-func Server(bin string) error {
+func Server(cmd string) error {
 	var err error
 
 	self, err := os.Executable()
@@ -35,14 +35,18 @@ func Server(bin string) error {
 	}
 
 	lst.Run(listener.OnMessageFunc(func(data []byte) error {
-		return command.RunShell(kak.EditClient(string(data)))
+		cmd, err := kak.EditClient(string(data))
+		if err != nil {
+			return err
+		}
+		return command.RunShell(cmd)
 	}))
 
 	env := []string{
-		fmt.Sprintf("EDITOR=%s %s", self, lst),
-		fmt.Sprintf("VISUAL=%s %s", self, lst),
+		fmt.Sprintf("EDITOR=%s -mode client %s", self, lst),
+		fmt.Sprintf("VISUAL=%s -mode client %s", self, lst),
 	}
-	err = command.RunPassthrough(bin, env...)
+	err = command.RunPassthrough(cmd, env...)
 
 	cancel()
 
@@ -54,16 +58,21 @@ func Server(bin string) error {
 	return err
 }
 
+// Local runs the file picker and replaces $EDITOR with a pre-connected
+// Kakoune command.
+func Local(cmd string) error {
+	cmd, err := kak.EditSession()
+	if err != nil {
+		return err
+	}
+
+	env := []string{
+		fmt.Sprintf("EDITOR=%s", cmd),
+		fmt.Sprintf("VISUAL=%s", cmd),
+	}
+	return command.RunPassthrough(cmd, env...)
+}
+
 // Client acts as a drop-in $EDITOR replacement and sends filenames to
 // the server.
 func Client(socket, file string) error { return listener.Send(socket, file) }
-
-// Local runs the file picker and replaces $EDITOR with a pre-connected
-// Kakoune command.
-func Local(bin string) error {
-	env := []string{
-		fmt.Sprintf("EDITOR=%s", kak.EditSession()),
-		fmt.Sprintf("VISUAL=%s", kak.EditSession()),
-	}
-	return command.RunPassthrough(bin, env...)
-}

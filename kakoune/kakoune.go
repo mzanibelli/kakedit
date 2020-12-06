@@ -1,6 +1,7 @@
 package kakoune
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
@@ -23,11 +24,17 @@ func FromEnvironment() Kakoune {
 }
 
 // EditClient sends an edit command to an existing Kakoune client.
-func (kak Kakoune) EditClient(file string) string {
-	return fmt.Sprintf(editClient, kak.client, file, kak.session)
+func (kak Kakoune) EditClient(file string) (string, error) {
+	if kak.session == "" || kak.client == "" {
+		return "", errors.New("missing required environment variable: kak_session, kak_client")
+	}
+	return fmt.Sprintf(editClient, kak.client, file, kak.session), nil
 }
 
 // EditSession starts a new client connected to the same session.
-func (kak Kakoune) EditSession() string {
-	return fmt.Sprintf(editSession, kak.session)
+func (kak Kakoune) EditSession() (string, error) {
+	if kak.session == "" {
+		return "", errors.New("missing required environment variable: kak_session")
+	}
+	return fmt.Sprintf(editSession, kak.session), nil
 }
