@@ -59,7 +59,7 @@ func minArgs(n int) error {
 		return fmt.Errorf("could not validate args before parsing them")
 	}
 	if flag.NArg() < n {
-		return fmt.Errorf("mode %s requires at least %d arguments, got: %d",
+		return fmt.Errorf("mode %s requires at least %d argument(s), got: %d",
 			Mode, n, flag.NArg())
 	}
 	return nil
