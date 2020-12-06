@@ -3,7 +3,10 @@ package kakoune
 import (
 	"fmt"
 	"os"
-	"os/exec"
+)
+
+const (
+	editCmd = "echo 'evaluate-commands -verbatim -client %s edit \"%s\"' | kak -p %s"
 )
 
 // Kakoune holds information to make a connection to an existing
@@ -19,15 +22,6 @@ func FromEnvironment() *Kakoune {
 }
 
 // Edit sends an edit command to the instance.
-func (i Kakoune) Edit(file string) *exec.Cmd {
-	cmd := fmt.Sprintf("evaluate-commands -verbatim -client %s edit \"%s\"",
-		i.client, file)
-	return i.makeShellCmd(cmd)
-}
-
-func (i Kakoune) makeShellCmd(str string) *exec.Cmd {
-	shellCmd := fmt.Sprintf("echo '%s' | kak -p %s", str, i.session)
-	cmd := exec.Command("/bin/sh", "-c", shellCmd)
-	cmd.Env = os.Environ()
-	return cmd
+func (i Kakoune) Edit(file string) string {
+	return fmt.Sprintf(editCmd, i.client, file, i.session)
 }

@@ -1,9 +1,10 @@
 package kakoune_test
 
 import (
+	"fmt"
 	"kakedit/kakoune"
 	"os"
-	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -18,13 +19,13 @@ func TestEditCommandFormat(t *testing.T) {
 	kak := kakoune.FromEnvironment()
 	cmd := kak.Edit("test.txt")
 
-	want := []string{
-		"/bin/sh",
-		"-c",
-		"echo 'evaluate-commands -verbatim -client bar edit \"test.txt\"' | kak -p foo",
-	}
+	want := strings.Join([]string{
+		"echo",
+		"'evaluate-commands -verbatim -client bar edit \"test.txt\"'",
+		"| kak -p foo",
+	}, " ")
 
-	if !reflect.DeepEqual(cmd.Args, want) {
-		t.Errorf("want: %v\ngot: %v", want, cmd.Args)
+	if fmt.Sprint(cmd) != want {
+		t.Errorf("want: %s\ngot: %s", want, fmt.Sprint(cmd))
 	}
 }

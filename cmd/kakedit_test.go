@@ -37,6 +37,7 @@ func TestKakEdit(t *testing.T) {
 	}
 
 	ctx, stopKak := context.WithCancel(context.Background())
+	defer stopKak()
 	session := fmt.Sprint(os.Getpid())
 	client := "client0"
 	kak := exec.CommandContext(ctx, bin, "-ui", "dummy", "-n",
@@ -51,6 +52,4 @@ func TestKakEdit(t *testing.T) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Errorf("%s", out)
 	}
-
-	stopKak()
 }

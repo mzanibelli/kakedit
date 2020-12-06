@@ -1,16 +1,17 @@
-package picker_test
+package command_test
 
 import (
-	"bytes"
-	"kakedit/picker"
+	"kakedit/command"
 	"os"
 	"strings"
 	"testing"
 )
 
-func TestPicker(t *testing.T) {
-	pi := picker.New("foo")
-	cmd := pi.Pick(bytes.NewBuffer([]byte("bar")))
+func TestCommand(t *testing.T) {
+	cmd := command.New("foo")
+	cmd.OsPassthrough()
+	cmd.Setenv("bar=baz")
+	cmd.WrapShell()
 
 	if cmd.Stdout != os.Stdout {
 		t.Error("output is not stdout")
@@ -30,7 +31,12 @@ func TestPicker(t *testing.T) {
 	}
 
 	for _, env := range cmd.Env {
-		assertEnv(env, "EDITOR", "bar")
-		assertEnv(env, "VISUAL", "bar")
+		assertEnv(env, "bar", "baz")
+	}
+
+	want := "/bin/sh -c foo"
+	got := cmd.String()
+	if cmd.String() != "/bin/sh -c foo" {
+		t.Errorf("want: %s, got: %s", want, got)
 	}
 }
