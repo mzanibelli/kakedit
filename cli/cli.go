@@ -18,11 +18,17 @@ func init() {
 
 // Fail exits with an optional error and prints usage information.
 func Fail(err error) {
+	// Avoid repeating output when the server invokes a client that fails.
+	if Mode == ModeClient {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 	if err != nil {
 		fmt.Fprintln(flag.CommandLine.Output(), "Error:", err)
 	}
 	fmt.Fprintf(flag.CommandLine.Output(),
-		"Usage: %s -mode MODE PROGRAM [ARGS...]", os.Args[0])
+		"Usage: %s [-mode local] PROGRAM [ARGS...]", os.Args[0])
 	os.Exit(1)
 }
 
@@ -44,7 +50,8 @@ func minArgs(n int) error {
 		return fmt.Errorf("could not validate args before parsing them")
 	}
 	if flag.NArg() < n {
-		return fmt.Errorf("mode %s requires at least %d arguments", Mode, n)
+		return fmt.Errorf("mode %s requires at least %d arguments, got: %d",
+			Mode, n, flag.NArg())
 	}
 	return nil
 }
