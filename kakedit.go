@@ -3,10 +3,10 @@ package kakedit
 import (
 	"context"
 	"fmt"
-	"kakedit/command"
 	"kakedit/kakoune"
 	"kakedit/listener"
 	"os"
+	"os/exec"
 	"time"
 )
 
@@ -16,7 +16,7 @@ import (
 var kak = kakoune.FromEnvironment()
 
 // DefaultTimeout is the maximum delay to shutdown the listener.
-const DefaultTimeout time.Duration = 200 * time.Millisecond
+const DefaultTimeout time.Duration = 20 * time.Millisecond
 
 // Server runs the file picker and waits for edit requests. Requests are
 // then forwarded to an existing Kakoune client.
@@ -39,14 +39,14 @@ func Server(cmd string) error {
 		if err != nil {
 			return err
 		}
-		return command.RunShell(cmd)
+		return runShell(cmd)
 	}))
 
 	env := []string{
 		fmt.Sprintf("EDITOR=%s -mode client %s", self, lst),
 		fmt.Sprintf("VISUAL=%s -mode client %s", self, lst),
 	}
-	err = command.RunPassthrough(cmd, env...)
+	err = runShell(cmd, env...)
 
 	cancel()
 
@@ -70,9 +70,18 @@ func Local(cmd string) error {
 		fmt.Sprintf("EDITOR=%s", editor),
 		fmt.Sprintf("VISUAL=%s", editor),
 	}
-	return command.RunPassthrough(cmd, env...)
+	return runShell(cmd, env...)
 }
 
 // Client acts as a drop-in $EDITOR replacement and sends filenames to
 // the server.
 func Client(socket, file string) error { return listener.Send(socket, file) }
+
+func runShell(line string, env ...string) error {
+	cmd := exec.Command("/bin/sh", "-c", line)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
+	return cmd.Run()
+}
