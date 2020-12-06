@@ -30,9 +30,9 @@ same session. This is a blocking behavior, preferred for use-cases like
 Git commit message edition where the parent process waits for its child
 to exit.
 
-## Tweaks
+## Recommended tweaks
 
-- Make Broot open all files in `$EDITOR`.
+- [Make Broot open all files in `$EDITOR`.](https://dystroy.org/broot/tricks/#change-standard-file-opening)
 - Tweak Kakoune runtime to forward `kak_client` and `kak_session` to the windowing system. This makes `:terminal kakedit` become the fun bit.
 
 ## See also
