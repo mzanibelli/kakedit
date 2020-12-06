@@ -33,7 +33,7 @@ to exit.
 ## Tweaks
 
 - Make Broot open all files in `$EDITOR`.
-- Tweak Kakoune runtime to forward `kak_client` and `kak_session` to the windowing systemd. This makes `:terminal kakedit` become the fun bit.
+- Tweak Kakoune runtime to forward `kak_client` and `kak_session` to the windowing system. This makes `:terminal kakedit` become the fun bit.
 
 ## See also
 
