@@ -36,10 +36,12 @@ func TestKakEdit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx, stopKak := context.WithCancel(context.Background())
-	defer stopKak()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	session := fmt.Sprint(os.Getpid())
 	client := "client0"
+
 	kak := exec.CommandContext(ctx, bin, "-ui", "dummy", "-n",
 		"-s", session, "-e", fmt.Sprintf("'rename-client %s'", client))
 	kak.Env = os.Environ()

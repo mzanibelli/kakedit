@@ -34,7 +34,8 @@ func (c *Command) Setenv(env ...string) {
 
 // WrapShell prepares the command for running inside a shell.
 func (c *Command) WrapShell() {
-	shell := New(fmt.Sprintf("/bin/sh -c %s", c))
+	shell := New("/bin/sh")
+	shell.Args = []string{"/bin/sh", "-c", fmt.Sprint(c)}
 	shell.Stdin = c.Stdin
 	shell.Stdout = c.Stdout
 	shell.Stderr = c.Stderr

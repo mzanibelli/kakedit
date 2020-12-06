@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	editCmd = "echo 'evaluate-commands -verbatim -client %s edit \"%s\"' | kak -p %s"
+	editClient  = "echo 'evaluate-commands -verbatim -client %s edit \"%s\"' | kak -p %s"
+	editSession = "kak -c %s"
 )
 
 // Kakoune holds information to make a connection to an existing
@@ -17,11 +18,16 @@ type Kakoune struct {
 }
 
 // FromEnvironment returns a new Kakoune instance.
-func FromEnvironment() *Kakoune {
-	return &Kakoune{os.Getenv("kak_session"), os.Getenv("kak_client")}
+func FromEnvironment() Kakoune {
+	return Kakoune{os.Getenv("kak_session"), os.Getenv("kak_client")}
 }
 
-// Edit sends an edit command to the instance.
-func (i Kakoune) Edit(file string) string {
-	return fmt.Sprintf(editCmd, i.client, file, i.session)
+// EditClient sends an edit command to an existing Kakoune client.
+func (kak Kakoune) EditClient(file string) string {
+	return fmt.Sprintf(editClient, kak.client, file, kak.session)
+}
+
+// EditSession starts a new client connected to the same session.
+func (kak Kakoune) EditSession() string {
+	return fmt.Sprintf(editSession, kak.session)
 }

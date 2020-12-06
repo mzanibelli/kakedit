@@ -8,7 +8,7 @@ import (
 )
 
 func TestCommand(t *testing.T) {
-	cmd := command.New("foo")
+	cmd := command.New("foo bar")
 	cmd.OsPassthrough()
 	cmd.Setenv("bar=baz")
 	cmd.WrapShell()
@@ -34,9 +34,9 @@ func TestCommand(t *testing.T) {
 		assertEnv(env, "bar", "baz")
 	}
 
-	want := "/bin/sh -c foo"
+	want := "/bin/sh -c foo bar"
 	got := cmd.String()
-	if cmd.String() != "/bin/sh -c foo" {
+	if cmd.String() != want {
 		t.Errorf("want: %s, got: %s", want, got)
 	}
 }

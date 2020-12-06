@@ -11,6 +11,22 @@ import (
 	"time"
 )
 
+// Send writes a string to a given socket.
+func Send(addr, str string) error {
+	conn, err := net.Dial("unix", addr)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	_, err = fmt.Fprint(conn, str)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Listener is a stoppable UnixListener.
 type Listener struct {
 	*net.UnixListener
@@ -25,10 +41,12 @@ type Listener struct {
 // context state.
 func ListenContext(ctx context.Context, timeout time.Duration) (*Listener, error) {
 	addr := makeUniqueSocketPath()
+
 	unix, err := net.Listen("unix", addr)
 	if err != nil {
 		return nil, err
 	}
+
 	return &Listener{
 		unix.(*net.UnixListener),
 		addr,
@@ -45,8 +63,8 @@ func (l *Listener) Close() error {
 	return <-l.err
 }
 
-// Addr returns the path to the socket being listened to.
-func (l Listener) Addr() string { return l.addr }
+// String returns the path to the socket.
+func (l Listener) String() string { return l.addr }
 
 // Handler handles a new connection.
 type Handler interface{ OnMessage(data []byte) error }
@@ -63,6 +81,7 @@ func (l *Listener) Run(handler Handler) { go func() { l.err <- l.run(handler) }(
 func (l *Listener) run(handler Handler) error {
 	for {
 		l.SetDeadline(time.Now().Add(l.timeout))
+
 		conn, err := l.UnixListener.Accept()
 		select {
 		case <-l.ctx.Done():
@@ -70,18 +89,22 @@ func (l *Listener) run(handler Handler) error {
 		default:
 			// handle connection
 		}
+
 		var ne net.Error
 		if errors.As(err, &ne) && ne.Timeout() && ne.Temporary() {
 			continue
 		}
+
 		if err != nil {
 			return err
 		}
 		defer conn.Close()
+
 		data, err := ioutil.ReadAll(conn)
 		if err != nil {
 			return err
 		}
+
 		if err := handler.OnMessage(data); err != nil {
 			return err
 		}
@@ -93,6 +116,6 @@ func makeUniqueSocketPath() string {
 	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
 		baseDir = os.TempDir()
 	}
-	return path.Join(baseDir,
-		fmt.Sprintf("kakedit.%d", os.Getpid()))
+
+	return path.Join(baseDir, fmt.Sprintf("kakedit.%d", os.Getpid()))
 }

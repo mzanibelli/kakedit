@@ -3,10 +3,10 @@ package kakedit
 import (
 	"context"
 	"fmt"
-	"kakedit/client"
 	"kakedit/command"
 	"kakedit/kakoune"
 	"kakedit/listener"
+	"os"
 	"time"
 )
 
@@ -15,24 +15,34 @@ import (
 // inside the client or the server context.
 var kak = kakoune.FromEnvironment()
 
-// Pick runs the file picker and listens for edit requests.
-func Pick(self, bin string, timeout time.Duration) error {
+// DefaultTimeout is the maximum delay to shutdown the listener.
+const DefaultTimeout time.Duration = 200 * time.Millisecond
+
+// Server runs the file picker and waits for edit requests. Requests are
+// then forwarded to an existing Kakoune client.
+func Server(bin string) error {
 	var err error
 
+	self, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
-	lst, err := listener.ListenContext(ctx, timeout)
+	lst, err := listener.ListenContext(ctx, DefaultTimeout)
 	if err != nil {
 		return err
 	}
 
 	lst.Run(listener.OnMessageFunc(func(data []byte) error {
-		return command.RunShell(kak.Edit(string(data)))
+		return command.RunShell(kak.EditClient(string(data)))
 	}))
 
-	cl := client.New(self, lst.Addr())
-
-	err = command.RunPassthrough(bin,
-		fmt.Sprintf("EDITOR=%s", cl), fmt.Sprintf("VISUAL=%s", cl))
+	env := []string{
+		fmt.Sprintf("EDITOR=%s %s", self, lst),
+		fmt.Sprintf("VISUAL=%s %s", self, lst),
+	}
+	err = command.RunPassthrough(bin, env...)
 
 	cancel()
 
@@ -44,5 +54,16 @@ func Pick(self, bin string, timeout time.Duration) error {
 	return err
 }
 
-// Edit sends a given filename to the remote listener.
-func Edit(bin, socket, file string) error { return client.New(bin, socket).Send(file) }
+// Client acts as a drop-in $EDITOR replacement and sends filenames to
+// the server.
+func Client(socket, file string) error { return listener.Send(socket, file) }
+
+// Local runs the file picker and replaces $EDITOR with a pre-connected
+// Kakoune command.
+func Local(bin string) error {
+	env := []string{
+		fmt.Sprintf("EDITOR=%s", kak.EditSession()),
+		fmt.Sprintf("VISUAL=%s", kak.EditSession()),
+	}
+	return command.RunPassthrough(bin, env...)
+}
