@@ -30,6 +30,26 @@ same session. This is a blocking behavior, preferred for use-cases like
 Git commit message edition where the parent process waits for its child
 to exit.
 
+## How it works
+
+### Mode `server`
+
+This is the default mode.
+
+Using this mode, KakEdit will start listening to a socket and run the
+program given as argument. `$EDITOR` is replaced by `kakedit -mode client <socket>` and this will make subsenquent `$EDITOR` invocations
+run KakEdit in a specific mode that will just write the filename to the
+socket. The running server will catch that filename and execute `echo 'evaluate-commands -client <client> edit <filename>' | kak -p <session>`
+to forward the edit request to an existing Kakoune instance.
+
+### Mode `local`
+
+`$EDITOR` is simply replaced by a call to `kak -c <session>` where the session is read from the environment.
+
+### Mode `client`
+
+This is not intended for humans, see `server` mode.
+
 ## Recommended tweaks
 
 - [Make Broot open all files in `$EDITOR`.](https://dystroy.org/broot/tricks/#change-standard-file-opening)
@@ -38,5 +58,5 @@ to exit.
 ## See also
 
 The infamous [connect.kak](https://github.com/alexherbo2/connect.kak) is much better in (almost) every aspect.
-If I had a reason not to choose it, it would be because it's too big for my use cases and heavily relies on Unix-like underlying OS.
+If I had a reason not to choose it, it would be because it's too big for my use cases.
 I also prefer a single binary over a collection of runtime scripts.
