@@ -42,7 +42,9 @@ func Server(cmd string) error {
 		return runShell(kak.EditClient(string(data)), "")
 	}))
 
-	err = runShell(cmd, fmt.Sprintf("%s -mode client %s", self, lst))
+	// Force client to run in silent mode for now. One can change
+	// the source for debugging purposes.
+	err = runShell(cmd, fmt.Sprintf("%s -silent -mode client %s", self, lst))
 
 	cancel()
 

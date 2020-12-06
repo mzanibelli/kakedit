@@ -9,15 +9,22 @@ import (
 var (
 	// Mode is the selected operation mode.
 	Mode OperationMode = ModeServer
+	// Silent suppresses any output caused by Fail().
+	// This does nothing on external programs.
+	Silent bool = false
 )
 
 func init() {
-	flag.Var(&Mode, "mode",
-		"select mode of operation (server, client, local)")
+	flag.Var(&Mode, "mode", "select mode of operation (server, client, local)")
+	flag.BoolVar(&Silent, "silent", false, "do not print any output")
 }
 
 // Fail exits with an optional error and prints usage information.
 func Fail(err error) {
+	if Silent {
+		os.Exit(1)
+	}
+
 	// Avoid repeating output when the server invokes a client that fails.
 	if Mode == ModeClient {
 		fmt.Fprintln(os.Stderr, err)
@@ -27,8 +34,10 @@ func Fail(err error) {
 	if err != nil {
 		fmt.Fprintln(flag.CommandLine.Output(), "Error:", err)
 	}
+
 	fmt.Fprintf(flag.CommandLine.Output(),
 		"Usage: %s [-mode local] PROGRAM [ARGS...]", os.Args[0])
+
 	os.Exit(1)
 }
 
