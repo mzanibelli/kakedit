@@ -21,6 +21,10 @@ const DefaultTimeout time.Duration = 20 * time.Millisecond
 // Server runs the file picker and waits for edit requests. Requests are
 // then forwarded to an existing Kakoune client.
 func Server(cmd string) error {
+	if kak.UnknownRemote() {
+		return Local(cmd)
+	}
+
 	var err error
 
 	self, err := os.Executable()
@@ -35,18 +39,10 @@ func Server(cmd string) error {
 	}
 
 	lst.Run(listener.OnMessageFunc(func(data []byte) error {
-		cmd, err := kak.EditClient(string(data))
-		if err != nil {
-			return err
-		}
-		return runShell(cmd)
+		return runShell(kak.EditClient(string(data)), "")
 	}))
 
-	env := []string{
-		fmt.Sprintf("EDITOR=%s -mode client %s", self, lst),
-		fmt.Sprintf("VISUAL=%s -mode client %s", self, lst),
-	}
-	err = runShell(cmd, env...)
+	err = runShell(cmd, fmt.Sprintf("%s -mode client %s", self, lst))
 
 	cancel()
 
@@ -59,29 +55,22 @@ func Server(cmd string) error {
 }
 
 // Local runs the file picker and replaces $EDITOR with a pre-connected
-// Kakoune command.
-func Local(cmd string) error {
-	editor, err := kak.EditSession()
-	if err != nil {
-		return err
-	}
-
-	env := []string{
-		fmt.Sprintf("EDITOR=%s", editor),
-		fmt.Sprintf("VISUAL=%s", editor),
-	}
-	return runShell(cmd, env...)
-}
+// Kakoune command. This fallbacks to a brand new Kakoune session if
+// the environment variable is empty.
+func Local(cmd string) error { return runShell(cmd, kak.EditSession()) }
 
 // Client acts as a drop-in $EDITOR replacement and sends filenames to
 // the server.
 func Client(socket, file string) error { return listener.Send(socket, file) }
 
-func runShell(line string, env ...string) error {
+// Run a command inside a shell using system IO. Replace environment
+// variables EDITOR and VISUAL with the given value.
+func runShell(line string, editor string) error {
 	cmd := exec.Command("/bin/sh", "-c", line)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = append(os.Environ(), env...)
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("EDITOR=%s", editor), fmt.Sprintf("VISUAL=%s", editor))
 	return cmd.Run()
 }
