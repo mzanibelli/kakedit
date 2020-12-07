@@ -13,42 +13,29 @@ Also, leveraging client-server architecture for a text editor is still underrate
 
 ## Build & test
 
-Like any standard Go program.
+See `Makefile`.
 
 ## Usage
 
 - Make sure `kak_session` and `kak_client` environment variables are defined.
 - Run `kakedit PROGRAM`. This project was mainly written with [broot(1)](https://github.com/Canop/broot) in mind.
 
-Without any specific option, this will run the given program and replace
-`$EDITOR` (and `$VISUAL`) with something that will send an edit command
-to an existing Kakoune client.
-
-With `-mode local`, instead of sending the edit request to an existing
-client, any call to `$EDITOR` will open a new client connected to the
-same session. This is a blocking behavior, preferred for use-cases like
-Git commit message edition where the parent process waits for its child
-to exit.
+This will run the given program and replace `$EDITOR` (and `$VISUAL`) with
+something that will send an edit command to an existing Kakoune client.
 
 ## How it works
 
-### Mode `server`
+### `kakedit`
 
-This is the default mode.
+Start listening to a socket and run the program given as
+argument. `$EDITOR` is replaced by `kakpipe <socket>` and this will
+make subsequent `$EDITOR` invocations just write the filename to the
+socket. The running server will catch that filename and send an edit
+command to an existing Kakoune instance.
 
-Using this mode, KakEdit will start listening to a socket and run the
-program given as argument. `$EDITOR` is replaced by `kakedit -mode client <socket>` and this will make subsenquent `$EDITOR` invocations
-run KakEdit in a specific mode that will just write the filename to the
-socket. The running server will catch that filename and execute `echo 'evaluate-commands -client <client> edit <filename>' | kak -p <session>`
-to forward the edit request to an existing Kakoune instance.
+### `kakpipe`
 
-### Mode `local`
-
-`$EDITOR` is simply replaced by a call to `kak -c <session>` where the session is read from the environment.
-
-### Mode `client`
-
-This is not intended for humans, see `server` mode.
+The first argument is the path to a socket and all the remaining arguments form a string that is written to the socket.
 
 ## Recommended tweaks
 
@@ -58,5 +45,4 @@ This is not intended for humans, see `server` mode.
 ## See also
 
 The infamous [connect.kak](https://github.com/alexherbo2/connect.kak) is much better in (almost) every aspect.
-If I had a reason not to choose it, it would be because it's too big for my use cases.
-I also prefer a single binary over a collection of runtime scripts.
+It's too big for my use cases and I prefer a single binary over a collection of runtime scripts.

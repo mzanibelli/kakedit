@@ -3,6 +3,7 @@ package kakoune
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 const (
@@ -31,7 +32,7 @@ func (kak Kakoune) UnknownRemote() bool {
 
 // EditClient sends an edit command to an existing Kakoune client.
 func (kak Kakoune) EditClient(file string) string {
-	return fmt.Sprintf(editClient, kak.client, file, kak.session)
+	return fmt.Sprintf(editClient, kak.client, strings.TrimSpace(file), kak.session)
 }
 
 // EditSession starts a new client connected to the same session.

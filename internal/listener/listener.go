@@ -11,22 +11,6 @@ import (
 	"time"
 )
 
-// Send writes a string to a given socket.
-func Send(addr, str string) error {
-	conn, err := net.Dial("unix", addr)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	_, err = fmt.Fprint(conn, str)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Listener is a stoppable UnixListener.
 type Listener struct {
 	*net.UnixListener
@@ -63,8 +47,8 @@ func (l *Listener) Close() error {
 	return <-l.err
 }
 
-// String returns the path to the socket.
-func (l Listener) String() string { return l.addr }
+// Addr returns the path to the socket.
+func (l Listener) Addr() string { return l.addr }
 
 // Handler handles a new connection.
 type Handler interface{ OnMessage(data []byte) error }
@@ -116,6 +100,5 @@ func makeUniqueSocketPath() string {
 	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
 		baseDir = os.TempDir()
 	}
-
 	return path.Join(baseDir, fmt.Sprintf("kakedit.%d", os.Getpid()))
 }

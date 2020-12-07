@@ -3,7 +3,7 @@ package listener_test
 import (
 	"context"
 	"fmt"
-	"kakedit/listener"
+	"kakedit/internal/listener"
 	"net"
 	"os"
 	"sync"
@@ -31,7 +31,7 @@ func TestListener(t *testing.T) {
 		return nil
 	}))
 
-	conn, err := net.Dial("unix", lst.String())
+	conn, err := net.Dial("unix", lst.Addr())
 	if err != nil {
 		t.Errorf("could not connect to listener: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestListener(t *testing.T) {
 	if err := lst.Close(); err != nil && err != ctx.Err() {
 		t.Error(err)
 	}
-	if _, err := os.Stat(lst.String()); os.IsExist(err) {
+	if _, err := os.Stat(lst.Addr()); os.IsExist(err) {
 		t.Error("socket was not removed on close")
 	}
 }

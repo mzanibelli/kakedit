@@ -1,7 +1,7 @@
 package kakoune_test
 
 import (
-	"kakedit/kakoune"
+	"kakedit/internal/kakoune"
 	"os"
 	"strings"
 	"testing"
