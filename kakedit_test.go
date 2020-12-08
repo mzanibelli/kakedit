@@ -17,6 +17,13 @@ func TestKakEdit(t *testing.T) {
 		t.Skip("missing kak(1) executable")
 	}
 
+	// pipe.sh is a pure shell implementation of kakpipe that
+	// needs netcat.
+	_, err = exec.LookPath("nc")
+	if err != nil {
+		t.Skip("missing nc(1) executable")
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

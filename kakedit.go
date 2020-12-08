@@ -31,6 +31,8 @@ func Run(cmd, pipe string) error {
 	}
 
 	lst.Run(listener.OnMessageFunc(func(data []byte) error {
+		// TODO: split messages on new line and allow editing
+		// multiple files...
 		return runShell(kak.EditClient(string(data)), "")
 	}))
 

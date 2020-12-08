@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -13,18 +12,17 @@ func main() {
 		usage()
 	}
 
-	addr := os.Args[1]
-	file := strings.Join(os.Args[2:], " ")
-
-	conn, err := net.Dial("unix", addr)
+	conn, err := net.Dial("unix", os.Args[1])
 	if err != nil {
 		exit(err)
 	}
 
 	defer conn.Close()
 
-	if _, err = fmt.Fprint(conn, file); err != nil {
-		exit(err)
+	for _, file := range os.Args[2:] {
+		if _, err = fmt.Fprintln(conn, file); err != nil {
+			exit(err)
+		}
 	}
 }
 
