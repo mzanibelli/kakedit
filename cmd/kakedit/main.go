@@ -27,7 +27,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "usage: %s PROGRAM\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "usage: %s PROGRAM [ARGS...]\n", os.Args[0])
 	os.Exit(1)
 }
 
