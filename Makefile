@@ -11,5 +11,5 @@ test:
 	go test ./...
 
 install:
-	go install cmd/kakedit/main.go
-	go install cmd/kakpipe/main.go
+	go install ./cmd/kakedit
+	go install ./cmd/kakpipe
