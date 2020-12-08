@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	editClient   = "echo 'evaluate-commands -verbatim -client %s edit \"%s\"' | kak -p %s"
+	editClient   = "echo 'evaluate-commands -verbatim -client %s edit -existing \"%s\"' | kak -p %s"
 	editSession  = "kak -c %s"
 	editFallback = "kak"
 )

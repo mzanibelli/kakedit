@@ -19,7 +19,7 @@ func TestEditCommandFormat(t *testing.T) {
 
 	want = strings.Join([]string{
 		"echo",
-		"'evaluate-commands -verbatim -client bar edit \"test.txt\"'",
+		"'evaluate-commands -verbatim -client bar edit -existing \"test.txt\"'",
 		"| kak -p foo",
 	}, " ")
 	got = kakoune.FromEnvironment().EditClient("test.txt")
