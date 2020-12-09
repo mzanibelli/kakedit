@@ -41,6 +41,11 @@ func TestKakEdit(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	defer func() {
+		kak.Process.Signal(syscall.SIGTERM)
+		kak.Wait()
+	}()
+
 	pick := path.Join(pwd, "testdata", "pick.sh")
 	pipe := path.Join(pwd, "testdata", "pipe.sh")
 
@@ -80,8 +85,4 @@ func TestKakEdit(t *testing.T) {
 			}
 		})
 	}
-
-	kak.Process.Signal(syscall.SIGTERM)
-
-	kak.Wait()
 }
