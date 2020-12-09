@@ -9,6 +9,7 @@ import (
 	"kakedit/internal/listener"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -31,9 +32,12 @@ func Run(cmd, pipe string) error {
 	}
 
 	lst.Run(listener.OnMessageFunc(func(data []byte) error {
-		// TODO: split messages on new line and allow editing
-		// multiple files...
-		return runShell(kak.EditClient(string(data)), "")
+		for _, file := range strings.Split(string(data), "\n") {
+			if err := runShell(kak.EditClient(file), ""); err != nil {
+				return err
+			}
+		}
+		return nil
 	}))
 
 	editor := fmt.Sprintf("%s %s", pipe, lst.Addr())
