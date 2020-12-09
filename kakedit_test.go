@@ -1,13 +1,13 @@
 package kakedit_test
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"kakedit"
 	"os"
 	"os/exec"
 	"path"
+	"syscall"
 	"testing"
 )
 
@@ -24,19 +24,20 @@ func TestKakEdit(t *testing.T) {
 		t.Skip("missing nc(1) executable")
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	session := fmt.Sprint(os.Getpid())
 	client := "client0"
 
-	kak := exec.CommandContext(ctx, bin, "-ui", "dummy", "-n",
-		"-s", session, "-e", fmt.Sprintf("'rename-client %s'", client))
-	kak.Env = os.Environ()
-	go kak.Run()
+	kak := exec.Command(bin, "-ui", "dummy", "-n", "-s", session, "-e",
+		fmt.Sprintf("'rename-client %s'", client))
 
-	pwd, err := os.Getwd()
-	if err != nil {
+	kak.Env = os.Environ()
+
+	if err := kak.Start(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,4 +80,8 @@ func TestKakEdit(t *testing.T) {
 			}
 		})
 	}
+
+	kak.Process.Signal(syscall.SIGTERM)
+
+	kak.Wait()
 }
