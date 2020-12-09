@@ -53,18 +53,18 @@ func TestKakEdit(t *testing.T) {
 		name    string
 		pick    string
 		pipe    string
+		wrap    string
 		session string
 		client  string
 		err     error
 	}{
-		{"server simple", "/bin/true", "/bin/true", session, client, nil},
-		{"server cmd fail", "/bin/false", "/bin/true", session, client, errors.New("exit status 1")},
-		{"server pipe fail", pick, "/bin/false", session, client, errors.New("exit status 1")},
-		{"server roundtrip", pick, pipe, session, client, nil},
-		{"server kak fail", pick, pipe, "unknown", "unknown", errors.New("exit status 255")},
-		{"local simple", "/bin/true", "/bin/true", "", "", nil},
-		{"local cmd fail", "/bin/false", "/bin/true", "", "", errors.New("exit status 1")},
-		{"local pipe fail", pick, "/bin/false", "", "", errors.New("exit status 255")},
+		{"server simple", "/bin/true", "/bin/true", "/bin/true", session, client, nil},
+		{"server cmd fail", "/bin/false", "/bin/true", "/bin/true", session, client, errors.New("exit status 1")},
+		{"server pipe fail", pick, "/bin/false", "/bin/true", session, client, errors.New("exit status 1")},
+		{"server roundtrip", pick, pipe, "/bin/true", session, client, nil},
+		{"server kak fail", pick, pipe, "/bin/true", "unknown", "unknown", errors.New("exit status 255")},
+		{"local simple", "/bin/true", "/bin/true", "/bin/true", "", "", nil},
+		{"local wrap fail", pick, "/bin/true", "/bin/false", "", "", errors.New("exit status 1")},
 	}
 
 	for _, test := range tests {
@@ -76,7 +76,7 @@ func TestKakEdit(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err := kakedit.Run(test.pick, test.pipe)
+			err := kakedit.ExternalProgram(test.pick, test.pipe, test.wrap)
 
 			want := fmt.Sprint(test.err)
 			got := fmt.Sprint(err)

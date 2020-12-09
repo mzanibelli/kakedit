@@ -20,6 +20,16 @@ type Listener struct {
 	err     chan error
 }
 
+func makeUniqueSocketPath() string {
+	baseDir := os.Getenv("XDG_RUNTIME_DIR")
+	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+		baseDir = os.TempDir()
+	}
+
+	// Example output: /run/user/1000/kakedit.XXX according to pid.
+	return path.Join(baseDir, fmt.Sprintf("kakedit.%d", os.Getpid()))
+}
+
 // ListenContext creates a stoppable listener. The timeout is used to
 // periodically stop waiting for an incoming connection and check the
 // context state.
@@ -93,12 +103,4 @@ func (l *Listener) run(handler Handler) error {
 			return err
 		}
 	}
-}
-
-func makeUniqueSocketPath() string {
-	baseDir := os.Getenv("XDG_RUNTIME_DIR")
-	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
-		baseDir = os.TempDir()
-	}
-	return path.Join(baseDir, fmt.Sprintf("kakedit.%d", os.Getpid()))
 }

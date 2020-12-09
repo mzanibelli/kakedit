@@ -37,6 +37,11 @@ command to an existing Kakoune instance.
 
 The first argument is the path to a socket and all the remaining arguments form a string that is written to the socket.
 
+### `kakwrap`
+
+Start a new Kakoune client inside an existing session that is unique for each directory.
+If the session does not exist yet, start it too.
+
 ## Recommended tweaks
 
 - [Make Broot open all files in `$EDITOR`.](https://dystroy.org/broot/tricks/#change-standard-file-opening)

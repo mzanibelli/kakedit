@@ -19,9 +19,14 @@ func main() {
 		exit(err)
 	}
 
+	kakwrap, err := exec.LookPath("kakwrap")
+	if err != nil {
+		exit(err)
+	}
+
 	cmd := strings.Join(os.Args[1:], " ")
 
-	if err := kakedit.Run(cmd, kakpipe); err != nil {
+	if err := kakedit.ExternalProgram(cmd, kakpipe, kakwrap); err != nil {
 		exit(err)
 	}
 }

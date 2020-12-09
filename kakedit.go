@@ -1,9 +1,10 @@
-// Package kakedit is a wrapper to an external program. It makes $EDITOR
-// invocations connect to an existing Kakoune instance.
+// Package kakedit is a collection of tools to improve Kakoune session
+// management.
 package kakedit
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"kakedit/internal/kakoune"
 	"kakedit/internal/listener"
@@ -13,12 +14,50 @@ import (
 	"time"
 )
 
-// Run runs the server and waits for edit requests.
-func Run(cmd, pipe string) error {
+// Kakoune runs kak(1) with a persistent session.
+func Kakoune(cwd string, args ...string) error {
 	kak := kakoune.FromEnvironment()
 
+	kak.SetUniqueSessionName(cwd)
+
+	// Do not check for actual errors on background session start. Let
+	// it silently fail if address already in use.
+	if err := kak.StartSession(cwd).Start(); err != nil {
+		return err
+	}
+
+	// Wait for the session to be truly started.
+	// See: https://github.com/mawww/kakoune/issues/3618
+	ping := make(chan struct{})
+	go func() {
+		for {
+			if err := kak.Ping().Run(); err == nil {
+				close(ping)
+				break
+			}
+		}
+	}()
+
+	select {
+	case <-ping:
+		return kak.EditSession(args...).Run()
+	case <-time.After(1 * time.Second):
+		return errors.New("timeout waiting for session")
+	}
+}
+
+// ExternalProgram runs an external program with a modified $EDITOR.
+func ExternalProgram(shell, kakpipe, kakwrap string) error {
+	kak := kakoune.FromEnvironment()
+
+	// If we cannot connect to a running client, trust kakwrap(1)
+	// to nicely create a new one.
 	if kak.UnknownRemote() {
-		return runShell(cmd, kak.EditSession())
+		cmd := exec.Command(kakwrap)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
 	}
 
 	var err error
@@ -32,17 +71,24 @@ func Run(cmd, pipe string) error {
 	}
 
 	lst.Run(listener.OnMessageFunc(func(data []byte) error {
-		for _, file := range strings.Split(string(data), "\n") {
-			if err := runShell(kak.EditClient(file), ""); err != nil {
-				return err
-			}
-		}
-		return nil
+		return kak.EditClientBulk(strings.Split(string(data), "\n"))
 	}))
 
-	editor := fmt.Sprintf("%s %s", pipe, lst.Addr())
+	// Run inside a shell to allow tricks like `$EDITOR $(fzf)`.
+	cmd := exec.Command("/bin/sh", "-c", shell)
 
-	err = runShell(cmd, editor)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Replace $EDITOR with kakpipe(1) pre-connected to the socket.
+	cmd.Env = append(
+		os.Environ(),
+		fmt.Sprintf("EDITOR=%s %s", kakpipe, lst.Addr()),
+		fmt.Sprintf("VISUAL=%s %s", kakpipe, lst.Addr()),
+	)
+
+	err = cmd.Run()
 
 	cancel()
 
@@ -52,26 +98,4 @@ func Run(cmd, pipe string) error {
 	}
 
 	return err
-}
-
-// Run a command inside a shell. Replace environment variables EDITOR
-// and VISUAL with the given value.
-func runShell(line string, editor string) error {
-	cmd := exec.Command("/bin/sh", "-c", line)
-
-	// If no $EDITOR given, run the command without system IO.
-	if editor == "" {
-		cmd.Stdin = nil
-		cmd.Stdout = nil
-		cmd.Stderr = nil
-	} else {
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
-	cmd.Env = append(os.Environ(),
-		fmt.Sprintf("EDITOR=%s", editor), fmt.Sprintf("VISUAL=%s", editor))
-
-	return cmd.Run()
 }
