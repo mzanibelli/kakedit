@@ -81,7 +81,7 @@ func (kak *Kakoune) EditSession(args ...string) *exec.Cmd {
 
 // StartSession starts a new session in a given directory.
 func (kak *Kakoune) StartSession(cwd string) *exec.Cmd {
-	return exec.Command(kak.Bin, "-s", kak.Session, "-d", "-E", fmt.Sprintf("cd '%s'", cwd))
+	return exec.Command("setsid", kak.Bin, "-s", kak.Session, "-d", "-E", fmt.Sprintf("cd '%s'", cwd))
 }
 
 // SetUniqueSessionName sets an unique session name for a given path.
