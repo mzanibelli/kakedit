@@ -6,19 +6,42 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"kakedit/internal/kakoune"
 	"kakedit/internal/listener"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"time"
 )
 
-// Kakoune runs kak(1) with a persistent session.
+// Kakoune runs kak(1) within a persistent session.
 func Kakoune(cwd string, args ...string) error {
 	kak := kakoune.FromEnvironment()
 
-	kak.SetUniqueSessionName(cwd)
+	// If a target session is already set by environment, expected
+	// it to be fully started.
+	if kak.Session != "" {
+		return kak.EditSession(args...).Run()
+	}
+
+	sess, err := ioutil.ReadFile(path.Join(cwd, ".kaksession"))
+	if err == nil {
+		kak.Session = strings.TrimSpace(string(sess))
+	} else if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	// Is a specific session requested?
+	if kak.Session == "" {
+		return kak.EditSession(args...).Run()
+	}
+
+	// Did somebody else start the session?
+	if err := kak.Ping().Run(); err == nil {
+		return kak.EditSession(args...).Run()
+	}
 
 	// Do not check for actual errors on background session start. Let
 	// it silently fail if address already in use.

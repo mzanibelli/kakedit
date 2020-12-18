@@ -23,6 +23,8 @@ See `Makefile`.
 This will run the given program and replace `$EDITOR` (and `$VISUAL`) with
 something that will send an edit command to an existing Kakoune client.
 
+Optionally, `kakwrap` will look for a session name in a `.kaksession` file located inside current directory.
+
 ## How it works
 
 ### `kakedit`

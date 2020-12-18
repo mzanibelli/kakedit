@@ -1,34 +1,22 @@
 package kakoune
 
 import (
-	"crypto/md5"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 )
 
 // Kakoune holds information to make a connection to an existing
 // Kakoune client.
 type Kakoune struct {
-	Bin     string
 	Session string
 	Client  string
 }
 
 // FromEnvironment returns a new Kakoune instance.
 func FromEnvironment() *Kakoune {
-	bin, err := exec.LookPath("kak")
-
-	// TODO: do not use panic()
-	if err != nil {
-		panic("kak(1) is missing in $PATH")
-	}
-
 	return &Kakoune{
-		bin,
 		os.Getenv("kak_session"),
 		os.Getenv("kak_client"),
 	}
@@ -43,7 +31,7 @@ func (kak *Kakoune) UnknownRemote() bool {
 // EditClient sends an edit command to an existing Kakoune client.
 func (kak *Kakoune) EditClient(file string) *exec.Cmd {
 	shell := fmt.Sprintf("echo 'evaluate-commands -verbatim -client %s edit -existing \"%s\"' | %s -p %s",
-		kak.Client, strings.TrimSpace(file), kak.Bin, kak.Session)
+		kak.Client, strings.TrimSpace(file), "kak", kak.Session)
 	return exec.Command("/bin/sh", "-c", shell)
 }
 
@@ -70,7 +58,7 @@ func (kak *Kakoune) EditSession(args ...string) *exec.Cmd {
 		session = append(session, "-c", kak.Session)
 	}
 
-	cmd := exec.Command(kak.Bin, append(session, args...)...)
+	cmd := exec.Command("kak", append(session, args...)...)
 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -81,12 +69,5 @@ func (kak *Kakoune) EditSession(args ...string) *exec.Cmd {
 
 // StartSession starts a new session in a given directory.
 func (kak *Kakoune) StartSession(cwd string) *exec.Cmd {
-	return exec.Command("setsid", kak.Bin, "-s", kak.Session, "-d", "-E", fmt.Sprintf("cd '%s'", cwd))
-}
-
-// SetUniqueSessionName sets an unique session name for a given path.
-func (kak *Kakoune) SetUniqueSessionName(cwd string) {
-	h := md5.New()
-	io.WriteString(h, path.Base(cwd))
-	kak.Session = fmt.Sprintf("%x", h.Sum(nil))
+	return exec.Command("setsid", "kak", "-s", kak.Session, "-d", "-E", fmt.Sprintf("cd '%s'", cwd))
 }
