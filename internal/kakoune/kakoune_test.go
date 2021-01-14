@@ -6,10 +6,6 @@ import (
 	"testing"
 )
 
-func TestEditCommandFormat(t *testing.T) {
-	t.Skip("TODO")
-}
-
 func TestUnknownRemote(t *testing.T) {
 	tests := []struct {
 		session string
