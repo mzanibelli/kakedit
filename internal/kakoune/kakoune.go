@@ -69,5 +69,6 @@ func (kak *Kakoune) EditSession(args ...string) *exec.Cmd {
 
 // StartSession starts a new session in a given directory.
 func (kak *Kakoune) StartSession(cwd string) *exec.Cmd {
-	return exec.Command("setsid", "kak", "-s", kak.Session, "-d", "-E", fmt.Sprintf("cd '%s'", cwd))
+	// TODO: implement cross-platform setsid behavior
+	return exec.Command("kak", "-s", kak.Session, "-d", "-E", fmt.Sprintf("cd '%s'", cwd))
 }
