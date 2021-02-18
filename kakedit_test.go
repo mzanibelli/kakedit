@@ -58,13 +58,13 @@ func TestKakEdit(t *testing.T) {
 		client  string
 		err     error
 	}{
-		{"server simple", "/bin/true", "/bin/true", "/bin/true", session, client, nil},
-		{"server cmd fail", "/bin/false", "/bin/true", "/bin/true", session, client, errors.New("exit status 1")},
-		{"server pipe fail", pick, "/bin/false", "/bin/true", session, client, errors.New("exit status 1")},
-		{"server roundtrip", pick, pipe, "/bin/true", session, client, nil},
-		{"server kak fail", pick, pipe, "/bin/true", "unknown", "unknown", errors.New("exit status 255")},
-		{"local simple", "/bin/true", "/bin/true", "/bin/true", "", "", nil},
-		{"local wrap fail", pick, "/bin/true", "/bin/false", "", "", errors.New("exit status 1")},
+		{"server simple", "true", "true", "true", session, client, nil},
+		{"server cmd fail", "false", "true", "true", session, client, errors.New("exit status 1")},
+		{"server pipe fail", pick, "false", "true", session, client, errors.New("exit status 1")},
+		{"server roundtrip", pick, pipe, "true", session, client, nil},
+		{"server kak fail", pick, pipe, "true", "unknown", "unknown", errors.New("exit status 255")},
+		{"local simple", "true", "true", "true", "", "", nil},
+		{"local wrap fail", pick, "true", "false", "", "", errors.New("exit status 1")},
 	}
 
 	for _, test := range tests {
