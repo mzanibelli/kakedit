@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 )
 
 func main() {
@@ -20,7 +21,11 @@ func main() {
 	defer conn.Close()
 
 	for _, file := range os.Args[2:] {
-		if _, err = fmt.Fprintln(conn, file); err != nil {
+		abs, err := filepath.Abs(file)
+		if err != nil {
+			exit(err)
+		}
+		if _, err = fmt.Fprintln(conn, abs); err != nil {
 			exit(err)
 		}
 	}
