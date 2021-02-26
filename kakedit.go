@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"kakedit/internal/kakoune"
 	"kakedit/internal/listener"
 	"os"
@@ -26,7 +25,7 @@ func Kakoune(cwd string, args ...string) error {
 		return kak.EditSession(args...).Run()
 	}
 
-	sess, err := ioutil.ReadFile(path.Join(cwd, ".kaksession"))
+	sess, err := os.ReadFile(path.Join(cwd, ".kaksession"))
 	if err == nil {
 		kak.Session = strings.TrimSpace(string(sess))
 	} else if err != nil && !os.IsNotExist(err) {
