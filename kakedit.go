@@ -10,7 +10,7 @@ import (
 	"kakedit/internal/listener"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -25,7 +25,7 @@ func Kakoune(cwd string, args ...string) error {
 		return kak.EditSession(args...).Run()
 	}
 
-	sess, err := os.ReadFile(path.Join(cwd, ".kaksession"))
+	sess, err := os.ReadFile(filepath.Join(cwd, ".kaksession"))
 	if err == nil {
 		kak.Session = strings.TrimSpace(string(sess))
 	} else if err != nil && !os.IsNotExist(err) {
