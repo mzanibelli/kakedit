@@ -19,7 +19,7 @@ import (
 func Kakoune(cwd string, args ...string) error {
 	kak := kakoune.FromEnvironment()
 
-	// If a target session is already set by environment, expected
+	// If a target session is already set by environment, expect
 	// it to be fully started.
 	if kak.Session != "" {
 		return kak.EditSession(args...).Run()
