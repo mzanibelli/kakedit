@@ -62,23 +62,13 @@ func Kakoune(cwd string, args ...string) error {
 }
 
 // ExternalProgram runs an external program with a modified $EDITOR.
-func ExternalProgram(shell, kakpipe, kakwrap string) error {
+func ExternalProgram(shell, pipe string) error {
 	kak := kakoune.FromEnvironment()
-
-	// If we cannot connect to a running client, trust kakwrap(1)
-	// to nicely create a new one.
-	if kak.UnknownRemote() {
-		cmd := exec.Command(kakwrap)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return cmd.Run()
-	}
-
-	var err error
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	var err error
 
 	lst, err := listener.ListenContext(ctx, 20*time.Millisecond)
 	if err != nil {
@@ -99,8 +89,8 @@ func ExternalProgram(shell, kakpipe, kakwrap string) error {
 	// Replace $EDITOR with kakpipe(1) pre-connected to the socket.
 	cmd.Env = append(
 		os.Environ(),
-		fmt.Sprintf("EDITOR=%s %s", kakpipe, lst.Addr()),
-		fmt.Sprintf("VISUAL=%s %s", kakpipe, lst.Addr()),
+		fmt.Sprintf("EDITOR=%s %s", pipe, lst.Addr()),
+		fmt.Sprintf("VISUAL=%s %s", pipe, lst.Addr()),
 	)
 
 	err = cmd.Run()

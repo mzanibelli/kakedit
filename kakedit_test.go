@@ -53,18 +53,16 @@ func TestKakEdit(t *testing.T) {
 		name    string
 		pick    string
 		pipe    string
-		wrap    string
 		session string
 		client  string
 		err     error
 	}{
-		{"server simple", "true", "true", "true", session, client, nil},
-		{"server cmd fail", "false", "true", "true", session, client, errors.New("exit status 1")},
-		{"server pipe fail", pick, "false", "true", session, client, errors.New("exit status 1")},
-		{"server roundtrip", pick, pipe, "true", session, client, nil},
-		{"server kak fail", pick, pipe, "true", "unknown", "unknown", errors.New("exit status 255")},
-		{"local simple", "true", "true", "true", "", "", nil},
-		{"local wrap fail", pick, "true", "false", "", "", errors.New("exit status 1")},
+		{"server simple", "true", "true", session, client, nil},
+		{"server cmd fail", "false", "true", session, client, errors.New("exit status 1")},
+		{"server pipe fail", pick, "false", session, client, errors.New("exit status 1")},
+		{"server roundtrip", pick, pipe, session, client, nil},
+		{"server kak fail", pick, pipe, "unknown", "unknown", errors.New("exit status 255")},
+		{"local simple", "true", "true", "", "", nil},
 	}
 
 	for _, test := range tests {
@@ -76,7 +74,7 @@ func TestKakEdit(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err := kakedit.ExternalProgram(test.pick, test.pipe, test.wrap)
+			err := kakedit.ExternalProgram(test.pick, test.pipe)
 
 			want := fmt.Sprint(test.err)
 			got := fmt.Sprint(err)

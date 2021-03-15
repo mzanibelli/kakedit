@@ -22,12 +22,6 @@ func FromEnvironment() *Kakoune {
 	}
 }
 
-// UnknownRemote returns true if the current environment does not allow
-// targeting a remote Kakoune instance.
-func (kak *Kakoune) UnknownRemote() bool {
-	return kak.Session == "" || kak.Client == ""
-}
-
 // EditClient sends an edit command to an existing Kakoune client.
 func (kak *Kakoune) EditClient(file string) *exec.Cmd {
 	shell := fmt.Sprintf("echo 'evaluate-commands -verbatim -client %s edit -existing \"%s\"' | %s -p %s",

@@ -6,29 +6,18 @@ import (
 	"testing"
 )
 
-func TestUnknownRemote(t *testing.T) {
-	tests := []struct {
-		session string
-		client  string
-		want    bool
-	}{
-		{"foo", "bar", false},
-		{"", "bar", true},
-		{"foo", "", true},
-		{"", "", true},
-	}
-	for _, test := range tests {
-		t.Run(test.session+"-"+test.client, func(t *testing.T) {
-			if err := os.Setenv("kak_session", test.session); err != nil {
-				t.Error(err)
-			}
-			if err := os.Setenv("kak_client", test.client); err != nil {
-				t.Error(err)
-			}
-			got := kakoune.FromEnvironment().UnknownRemote()
-			if got != test.want {
-				t.Errorf("want: %t, got: %t", test.want, got)
-			}
-		})
-	}
+func TestKakoune(t *testing.T) {
+	t.Run("it should produce a correct remote edit command", func(t *testing.T) {
+		os.Setenv("kak_session", "foo")
+		os.Setenv("kak_client", "bar")
+
+		SUT := kakoune.FromEnvironment()
+
+		want := `/bin/sh -c echo 'evaluate-commands -verbatim -client bar edit -existing "a.txt"' | kak -p foo`
+		got := SUT.EditClient("a.txt").String()
+
+		if want != got {
+			t.Errorf("want: %s, got: %s", want, got)
+		}
+	})
 }
