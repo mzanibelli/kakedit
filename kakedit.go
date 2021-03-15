@@ -4,7 +4,6 @@ package kakedit
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"kakedit/internal/kakoune"
 	"kakedit/internal/listener"
@@ -57,7 +56,7 @@ func Kakoune(cwd string, args ...string) error {
 	case <-ping:
 		return kak.EditSession(args...).Run()
 	case <-time.After(1 * time.Second):
-		return errors.New("timeout waiting for session")
+		return context.DeadlineExceeded
 	}
 }
 
