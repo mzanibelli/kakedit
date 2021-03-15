@@ -32,13 +32,8 @@ func Kakoune(cwd string, args ...string) error {
 		return err
 	}
 
-	// Is a specific session requested?
-	if kak.Session == "" {
-		return kak.EditSession(args...).Run()
-	}
-
-	// Did somebody else start the session?
-	if err := kak.Ping().Run(); err == nil {
+	// No session requested or it is already running.
+	if kak.Session == "" || kak.Ping().Run() == nil {
 		return kak.EditSession(args...).Run()
 	}
 
@@ -52,11 +47,9 @@ func Kakoune(cwd string, args ...string) error {
 	// See: https://github.com/mawww/kakoune/issues/3618
 	ping := make(chan struct{})
 	go func() {
-		for {
-			if err := kak.Ping().Run(); err == nil {
-				close(ping)
-				break
-			}
+		defer close(ping)
+		for kak.Ping().Run() != nil {
+			continue
 		}
 	}()
 
