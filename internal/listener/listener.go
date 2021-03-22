@@ -14,10 +14,8 @@ import (
 // Listener is a stoppable UnixListener.
 type Listener struct {
 	*net.UnixListener
-	addr    string
-	timeout time.Duration
-	ctx     context.Context
-	err     chan error
+	ctx context.Context
+	err chan error
 }
 
 func makeUniqueSocketPath() string {
@@ -30,21 +28,15 @@ func makeUniqueSocketPath() string {
 	return path.Join(baseDir, fmt.Sprintf("kakedit.%d", os.Getpid()))
 }
 
-// ListenContext creates a stoppable listener. The timeout is used to
-// periodically stop waiting for an incoming connection and check the
-// context state.
-func ListenContext(ctx context.Context, timeout time.Duration) (*Listener, error) {
-	addr := makeUniqueSocketPath()
-
-	unix, err := net.Listen("unix", addr)
+// ListenContext creates a stoppable listener.
+func ListenContext(ctx context.Context) (*Listener, error) {
+	unix, err := net.Listen("unix", makeUniqueSocketPath())
 	if err != nil {
 		return nil, err
 	}
 
 	return &Listener{
 		unix.(*net.UnixListener),
-		addr,
-		timeout,
 		ctx,
 		make(chan error),
 	}, nil
@@ -57,9 +49,6 @@ func (l *Listener) Close() error {
 	return <-l.err
 }
 
-// Addr returns the path to the socket.
-func (l Listener) Addr() string { return l.addr }
-
 // Handler handles a new connection.
 type Handler interface{ OnMessage(data []byte) error }
 
@@ -69,12 +58,17 @@ type OnMessageFunc func([]byte) error
 // OnMessage handles a new connection.
 func (f OnMessageFunc) OnMessage(data []byte) error { return f(data) }
 
-// Run starts waiting for an incoming connection in a separate goroutine.
-func (l *Listener) Run(handler Handler) { go func() { l.err <- l.run(handler) }() }
+// Handle starts waiting for an incoming connection in a separate goroutine.
+func (l *Listener) Handle(handler Handler) { go func() { l.err <- l.handle(handler) }() }
 
-func (l *Listener) run(handler Handler) error {
+// HandleFunc allows to pass an anonymous function to Handle.
+func (l *Listener) HandleFunc(f func([]byte) error) { l.Handle(OnMessageFunc(f)) }
+
+func (l *Listener) handle(handler Handler) error {
+	const timeout = 20 * time.Millisecond
+
 	for {
-		l.SetDeadline(time.Now().Add(l.timeout))
+		l.SetDeadline(time.Now().Add(timeout))
 
 		conn, err := l.UnixListener.Accept()
 		select {

@@ -69,14 +69,14 @@ func ExternalProgram(shell, pipe string) error {
 
 	var err error
 
-	lst, err := listener.ListenContext(ctx, 20*time.Millisecond)
+	lst, err := listener.ListenContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	lst.Run(listener.OnMessageFunc(func(data []byte) error {
+	lst.HandleFunc(func(data []byte) error {
 		return kak.EditClientBulk(strings.Split(string(data), "\n"))
-	}))
+	})
 
 	// Run inside a shell to allow tricks like `$EDITOR $(fzf)`.
 	cmd := exec.Command("/bin/sh", "-c", shell)
@@ -88,8 +88,8 @@ func ExternalProgram(shell, pipe string) error {
 	// Replace $EDITOR with kakpipe(1) pre-connected to the socket.
 	cmd.Env = append(
 		os.Environ(),
-		fmt.Sprintf("EDITOR=%s %s", pipe, lst.Addr()),
-		fmt.Sprintf("VISUAL=%s %s", pipe, lst.Addr()),
+		fmt.Sprintf("EDITOR=%s %s", pipe, lst.Addr().String()),
+		fmt.Sprintf("VISUAL=%s %s", pipe, lst.Addr().String()),
 	)
 
 	err = cmd.Run()
