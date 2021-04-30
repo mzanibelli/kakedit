@@ -4,6 +4,7 @@ package kakedit
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"kakedit/internal/kakoune"
 	"kakedit/internal/listener"
@@ -96,8 +97,8 @@ func ExternalProgram(shell, pipe string) error {
 
 	cancel()
 
-	// Make sure we call Close() and catch any error if no previous error occured.
-	if closeErr := lst.Close(); closeErr != ctx.Err() && err == nil {
+	// Make sure we call Close() and catch any error if no previous error occurred.
+	if closeErr := lst.Close(); !errors.Is(closeErr, ctx.Err()) && err == nil {
 		err = closeErr
 	}
 

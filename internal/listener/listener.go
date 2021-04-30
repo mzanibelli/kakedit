@@ -68,7 +68,9 @@ func (l *Listener) handle(handler Handler) error {
 	const timeout = 20 * time.Millisecond
 
 	for {
-		l.SetDeadline(time.Now().Add(timeout))
+		if err := l.SetDeadline(time.Now().Add(timeout)); err != nil {
+			return err
+		}
 
 		conn, err := l.UnixListener.Accept()
 		select {

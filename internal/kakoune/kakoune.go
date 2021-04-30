@@ -52,6 +52,7 @@ func (kak *Kakoune) EditSession(args ...string) *exec.Cmd {
 		session = append(session, "-c", kak.Session)
 	}
 
+	//nolint:gosec
 	cmd := exec.Command("kak", append(session, args...)...)
 
 	cmd.Stdin = os.Stdin
@@ -62,7 +63,8 @@ func (kak *Kakoune) EditSession(args ...string) *exec.Cmd {
 }
 
 // StartSession starts a new session in a given directory.
+// TODO: implement cross-platform setsid behavior.
 func (kak *Kakoune) StartSession(cwd string) *exec.Cmd {
-	// TODO: implement cross-platform setsid behavior
+	//nolint:gosec
 	return exec.Command("kak", "-s", kak.Session, "-d", "-E", fmt.Sprintf("cd '%s'", cwd))
 }

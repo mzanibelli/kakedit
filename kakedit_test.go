@@ -42,8 +42,12 @@ func TestKakEdit(t *testing.T) {
 	}
 
 	defer func() {
-		kak.Process.Signal(syscall.SIGTERM)
-		kak.Wait()
+		if err := kak.Process.Signal(syscall.SIGTERM); err != nil {
+			panic(err)
+		}
+		if err := kak.Wait(); err != nil {
+			panic(err)
+		}
 	}()
 
 	pick := path.Join(pwd, "testdata", "pick.sh")

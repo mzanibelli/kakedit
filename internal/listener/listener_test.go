@@ -2,6 +2,7 @@ package listener_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"kakedit/internal/listener"
 	"net"
@@ -44,7 +45,7 @@ func TestListener(t *testing.T) {
 
 	cancel()
 
-	if err := lst.Close(); err != nil && err != ctx.Err() {
+	if err := lst.Close(); err != nil && !errors.Is(err, ctx.Err()) {
 		t.Error(err)
 	}
 	if _, err := os.Stat(lst.Addr().String()); os.IsExist(err) {

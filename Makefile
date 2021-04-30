@@ -13,8 +13,10 @@ kakpipe: $(SRC) cmd/kakpipe/main.go
 kakwrap: $(SRC) cmd/kakwrap/main.go
 	go build -o kakwrap cmd/kakwrap/main.go
 
-test:
-	go vet ./...
+lint:
+	golangci-lint run ./...
+
+test: lint
 	go test ./...
 
 install:
