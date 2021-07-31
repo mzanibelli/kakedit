@@ -9,34 +9,33 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		usage()
+	if err := run(os.Args...); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", os.Args[0], err)
+		os.Exit(1)
+	}
+}
+
+func run(args ...string) error {
+	if len(args) < 2 {
+		return fmt.Errorf("usage: %s ADDR FILE", args[0])
 	}
 
-	conn, err := net.Dial("unix", os.Args[1])
+	conn, err := net.Dial("unix", args[1])
 	if err != nil {
-		exit(err)
+		return err
 	}
 
 	defer conn.Close()
 
-	for _, file := range os.Args[2:] {
+	for _, file := range args[2:] {
 		abs, err := filepath.Abs(file)
 		if err != nil {
-			exit(err)
+			return err
 		}
 		if _, err = fmt.Fprintln(conn, abs); err != nil {
-			exit(err)
+			return err
 		}
 	}
-}
 
-func usage() {
-	fmt.Fprintf(os.Stderr, "usage: %s ADDR FILE\n", os.Args[0])
-	os.Exit(1)
-}
-
-func exit(err error) {
-	fmt.Fprintf(os.Stderr, "%s: %v", os.Args[0], err)
-	os.Exit(1)
+	return nil
 }

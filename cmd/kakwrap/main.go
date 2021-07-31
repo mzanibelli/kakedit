@@ -5,20 +5,25 @@ import (
 	"fmt"
 	"kakedit"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	cwd, err := os.Getwd()
-	if err != nil {
-		exit(err)
-	}
-
-	if err := kakedit.Kakoune(cwd, os.Args[1:]...); err != nil {
-		exit(err)
+	if err := run(os.Args...); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", os.Args[0], err)
+		os.Exit(1)
 	}
 }
 
-func exit(err error) {
-	fmt.Fprintf(os.Stderr, "%s: %v", os.Args[0], err)
-	os.Exit(1)
+func run(args ...string) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	// Ignore interrupts like Kakoune does.
+	signal.Ignore(syscall.SIGINT)
+
+	return kakedit.Kakoune(cwd, args[1:]...)
 }

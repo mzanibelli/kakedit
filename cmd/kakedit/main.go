@@ -10,28 +10,23 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		usage()
+	if err := run(os.Args...); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", os.Args[0], err)
+		os.Exit(1)
+	}
+}
+
+func run(args ...string) error {
+	if len(args) < 2 {
+		return fmt.Errorf("usage: %s PROGRAM [ARGS...]", args[0])
 	}
 
 	kakpipe, err := exec.LookPath("kakpipe")
 	if err != nil {
-		exit(err)
+		return err
 	}
 
-	cmd := strings.Join(os.Args[1:], " ")
+	cmd := strings.Join(args[1:], " ")
 
-	if err := kakedit.ExternalProgram(cmd, kakpipe); err != nil {
-		exit(err)
-	}
-}
-
-func usage() {
-	fmt.Fprintf(os.Stderr, "usage: %s PROGRAM [ARGS...]\n", os.Args[0])
-	os.Exit(1)
-}
-
-func exit(err error) {
-	fmt.Fprintf(os.Stderr, "%s: %v", os.Args[0], err)
-	os.Exit(1)
+	return kakedit.ExternalProgram(cmd, kakpipe)
 }
