@@ -6,7 +6,6 @@ import (
 	"kakedit"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 func main() {
@@ -26,7 +25,5 @@ func run(args ...string) error {
 		return err
 	}
 
-	cmd := strings.Join(args[1:], " ")
-
-	return kakedit.ExternalProgram(cmd, kakpipe)
+	return kakedit.ExternalProgram(kakpipe, args[1:]...)
 }

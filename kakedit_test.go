@@ -78,7 +78,7 @@ func TestKakEdit(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err := kakedit.ExternalProgram(test.pick, test.pipe)
+			err := kakedit.ExternalProgram(test.pipe, test.pick)
 
 			want := fmt.Sprint(test.err)
 			got := fmt.Sprint(err)

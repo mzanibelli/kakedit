@@ -24,7 +24,7 @@ func FromEnvironment() *Kakoune {
 
 // EditClient sends an edit command to an existing Kakoune client.
 func (kak *Kakoune) EditClient(file string) *exec.Cmd {
-	shell := fmt.Sprintf("echo 'evaluate-commands -verbatim -client %s edit -existing \"%s\"' | %s -p %s",
+	shell := fmt.Sprintf("echo 'evaluate-commands -verbatim -client %s edit -existing %s' | %s -p %s",
 		kak.Client, strings.TrimSpace(file), "kak", kak.Session)
 	return exec.Command("/bin/sh", "-c", shell)
 }
@@ -38,6 +38,9 @@ func (kak *Kakoune) Ping() *exec.Cmd {
 // EditClientBulk sends edit commands for each received file.
 func (kak *Kakoune) EditClientBulk(files []string) error {
 	for _, file := range files {
+		if file == "" {
+			continue
+		}
 		if err := kak.EditClient(file).Run(); err != nil {
 			return err
 		}

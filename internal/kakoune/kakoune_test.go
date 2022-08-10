@@ -13,7 +13,7 @@ func TestKakoune(t *testing.T) {
 
 		SUT := kakoune.FromEnvironment()
 
-		want := `/bin/sh -c echo 'evaluate-commands -verbatim -client bar edit -existing "a.txt"' | kak -p foo`
+		want := `/bin/sh -c echo 'evaluate-commands -verbatim -client bar edit -existing a.txt' | kak -p foo`
 		got := SUT.EditClient("a.txt").String()
 
 		if want != got {

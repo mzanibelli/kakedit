@@ -62,7 +62,7 @@ func Kakoune(cwd string, args ...string) error {
 }
 
 // ExternalProgram runs an external program with a modified $EDITOR.
-func ExternalProgram(shell, pipe string) error {
+func ExternalProgram(pipe string, args ...string) error {
 	kak := kakoune.FromEnvironment()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -79,9 +79,7 @@ func ExternalProgram(shell, pipe string) error {
 		return kak.EditClientBulk(strings.Split(string(data), "\n"))
 	})
 
-	// Run inside a shell to allow tricks like `$EDITOR $(fzf)`.
-	cmd := exec.Command("/bin/sh", "-c", shell)
-
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -27,12 +28,29 @@ func run(args ...string) error {
 
 	defer conn.Close()
 
+	// Kakoune supports jumping to a specific line number.
+	// The jump is performed on the first file argument only.
+	var files []string
+	var lnum string
 	for _, file := range args[2:] {
+		if strings.HasPrefix(file, "+") {
+			lnum = strings.TrimPrefix(file, "+")
+			continue
+		}
+
 		abs, err := filepath.Abs(file)
 		if err != nil {
 			return err
 		}
-		if _, err = fmt.Fprintln(conn, abs); err != nil {
+
+		files = append(files, abs)
+	}
+
+	// Add line number to first match.
+	files[0] = files[0] + " " + lnum
+
+	for _, file := range files {
+		if _, err = fmt.Fprintln(conn, file); err != nil {
 			return err
 		}
 	}
