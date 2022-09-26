@@ -4,7 +4,6 @@ package kakedit
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"kakedit/internal/kakoune"
 	"kakedit/internal/listener"
@@ -13,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // Kakoune runs kak(1) within a persistent session.
@@ -63,42 +64,35 @@ func Kakoune(cwd string, args ...string) error {
 
 // ExternalProgram runs an external program with a modified $EDITOR.
 func ExternalProgram(pipe string, args ...string) error {
-	kak := kakoune.FromEnvironment()
+	kak, addr := kakoune.FromEnvironment(), listener.UniqueSocketPath()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	parent, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var err error
+	group, ctx := errgroup.WithContext(parent)
 
-	lst, err := listener.ListenContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	lst.HandleFunc(func(data []byte) error {
-		return kak.EditClientBulk(strings.Split(string(data), "\n"))
+	group.Go(func() error {
+		return listener.ListenContext(ctx, addr, listener.OnMessageFunc(func(data []byte) error {
+			return kak.EditClientBulk(strings.Split(string(data), "\n"))
+		}))
 	})
 
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	group.Go(func() error {
+		defer cancel()
 
-	// Replace $EDITOR with kakpipe(1) pre-connected to the socket.
-	cmd.Env = append(
-		os.Environ(),
-		fmt.Sprintf("EDITOR=%s %s", pipe, lst.Addr().String()),
-		fmt.Sprintf("VISUAL=%s %s", pipe, lst.Addr().String()),
-	)
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
-	err = cmd.Run()
+		cmd.Env = append(
+			os.Environ(),
+			fmt.Sprintf("EDITOR=%s %s", pipe, addr),
+			fmt.Sprintf("VISUAL=%s %s", pipe, addr),
+		)
 
-	cancel()
+		return cmd.Run()
+	})
 
-	// Make sure we call Close() and catch any error if no previous error occurred.
-	if closeErr := lst.Close(); !errors.Is(closeErr, ctx.Err()) && err == nil {
-		err = closeErr
-	}
-
-	return err
+	return group.Wait()
 }

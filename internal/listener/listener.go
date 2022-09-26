@@ -11,14 +11,9 @@ import (
 	"time"
 )
 
-// Listener is a stoppable UnixListener.
-type Listener struct {
-	*net.UnixListener
-	ctx context.Context
-	err chan error
-}
-
-func makeUniqueSocketPath() string {
+// UniqueSocketPath returns a path to a new socket in XDG_RUNTIME_DIR or in
+// system temporary directory if unset.
+func UniqueSocketPath() string {
 	baseDir := os.Getenv("XDG_RUNTIME_DIR")
 	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
 		baseDir = os.TempDir()
@@ -26,27 +21,6 @@ func makeUniqueSocketPath() string {
 
 	// Example output: /run/user/1000/kakedit.XXX according to pid.
 	return path.Join(baseDir, fmt.Sprintf("kakedit.%d", os.Getpid()))
-}
-
-// ListenContext creates a stoppable listener.
-func ListenContext(ctx context.Context) (*Listener, error) {
-	unix, err := net.Listen("unix", makeUniqueSocketPath())
-	if err != nil {
-		return nil, err
-	}
-
-	return &Listener{
-		unix.(*net.UnixListener),
-		ctx,
-		make(chan error),
-	}, nil
-}
-
-// Close stops waiting for the next incoming connection.
-func (l *Listener) Close() error {
-	defer l.UnixListener.Close()
-	defer close(l.err)
-	return <-l.err
 }
 
 // Handler handles a new connection.
@@ -58,24 +32,26 @@ type OnMessageFunc func([]byte) error
 // OnMessage handles a new connection.
 func (f OnMessageFunc) OnMessage(data []byte) error { return f(data) }
 
-// Handle starts waiting for an incoming connection in a separate goroutine.
-func (l *Listener) Handle(handler Handler) { go func() { l.err <- l.handle(handler) }() }
+// ListenContext creates a stoppable listener.
+func ListenContext(ctx context.Context, addr string, h Handler) error {
+	lst, err := net.Listen("unix", addr)
+	if err != nil {
+		return err
+	}
+	defer lst.Close()
 
-// HandleFunc allows to pass an anonymous function to Handle.
-func (l *Listener) HandleFunc(f func([]byte) error) { l.Handle(OnMessageFunc(f)) }
+	unix := lst.(*net.UnixListener)
 
-func (l *Listener) handle(handler Handler) error {
 	const timeout = 20 * time.Millisecond
-
 	for {
-		if err := l.SetDeadline(time.Now().Add(timeout)); err != nil {
+		if err := unix.SetDeadline(time.Now().Add(timeout)); err != nil {
 			return err
 		}
 
-		conn, err := l.UnixListener.Accept()
+		conn, err := unix.Accept()
 		select {
-		case <-l.ctx.Done():
-			return l.ctx.Err()
+		case <-ctx.Done():
+			return nil
 		default:
 			// handle connection
 		}
@@ -95,7 +71,7 @@ func (l *Listener) handle(handler Handler) error {
 			return err
 		}
 
-		if err := handler.OnMessage(data); err != nil {
+		if err := h.OnMessage(data); err != nil {
 			return err
 		}
 	}
